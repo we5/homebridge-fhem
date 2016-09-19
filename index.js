@@ -1535,7 +1535,7 @@ FHEMAccessory(platform, s) {
   } else if( s.Internals.TYPE == 'RESIDENTS' ) {
     this.service_name = 'security';
     this.mappings.SecuritySystemCurrentState = { reading: 'state', values: ['/^home/:DISARMED', '/^gotosleep/:NIGHT_ARM', '/^absent/:STAY_ARM', '/^gone/:AWAY_ARM'] }
-    this.mappings.SecuritySystemTargetState = { reading: 'state', values: ['/^home/:DISARMED', '/^gotosleep/:NIGHT_ARM', '/^absent/:STAY_ARM', '/^gone/:AWAY_ARM'], cmds: ['STAY_ARM:home', 'AWAY_ARM:absent', 'NIGHT_ARM:gotosleep', 'DISARM:home'], delay: true }
+    this.mappings.SecuritySystemTargetState = { reading: 'state', values: ['/^home/:DISARM', '/^gotosleep/:NIGHT_ARM', '/^absent/:STAY_ARM', '/^gone/:AWAY_ARM'], cmds: ['STAY_ARM:home', 'AWAY_ARM:absent', 'NIGHT_ARM:gotosleep', 'DISARM:home'], delay: true }
 
   } else if( s.Attributes.model == 'fs20di' )
     this.service_name = 'light';
