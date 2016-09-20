@@ -65,8 +65,7 @@ var tzoffset = (new Date()).getTimezoneOffset() * 60000; //offset in millisecond
 
 // cached readings from longpoll & query
 var FHEM_cached = {};
-function
-FHEM_update(informId, orig, no_update) {
+function FHEM_update(informId, orig, no_update) {
   if( orig === undefined
       || FHEM_cached[informId] === orig )
     return;
@@ -1553,8 +1552,32 @@ FHEMAccessory(platform, s) {
 
   } else if( s.Internals.TYPE == 'RESIDENTS' ) {
     this.service_name = 'security';
-    this.mappings.SecuritySystemCurrentState = { reading: 'lastActivity', values: ['/^home/:DISARMED', '/^gotosleep/:NIGHT_ARM', '/^absent/:AWAY_ARM', '/^gone/:AWAY_ARM'] }
-    this.mappings.SecuritySystemTargetState = { reading: 'state', values: ['/^home/:DISARMED', '/^gotosleep/:NIGHT_ARM', '/^absent/:AWAY_ARM', '/^gone/:AWAY_ARM'], cmds: ['STAY_ARM:home', 'AWAY_ARM:absent', 'NIGHT_ARM:gotosleep', 'DISARM:home'], delay: true }
+    var sscs = this.mappings.SecuritySystemCurrentState = { reading: 'lastActivity', values: ['home:STAY_ARM', 'gotosleep:NIGHT_ARM', 'absent:AWAY_ARM', 'gone:AWAY_ARM', 'off:DISARMED'] }
+    this.mappings.SecuritySystemTargetState = { reading: 'lastActivity', cmd: 'state', values: ['home:STAY_ARM', 'gotosleep:NIGHT_ARM', 'absent:AWAY_ARM', 'gone:AWAY_ARM', 'off:DISARM'], cmds: ['STAY_ARM:home', 'AWAY_ARM:absent', 'NIGHT_ARM:gotosleep', 'DISARM:home'] }
+
+    // var reading2homekit = function(mapping, orig) {
+    //   var ret = mapping.value2homekit[orig];
+    //   mapping.log.debug( 'reading2homekit was ' + ret );
+    //
+    //   FHEM_update(sscs.informId, ret)
+    //
+    //   return ret;
+    // }
+
+    // this.mappings.SecuritySystemCurrentState.reading2homekit = reading2homekit.bind(null, this.mappings.SecuritySystemCurrentState);
+    // this.mappings.SecuritySystemTargetState.reading2homekit = reading2homekit.bind(null, this.mappings.SecuritySystemTargetState);
+
+    // this.mappings.SecuritySystemTargetState.homekit2reading = function(mapping, orig) {
+    //   var ret = orig;
+    //   mapping.log.debug( 'homekit2reading was ' + ret );
+    //
+    //   if (ret == '3') {
+    //     // ret = '0';
+    //   }
+    //   mapping.log.debug( 'homekit2reading is ' + ret );
+    //
+    //   return ret;
+    // }.bind(null, this.mappings.SecuritySystemTargetState);
 
   } else if( s.Attributes.model == 'fs20di' )
     this.service_name = 'light';
