@@ -279,6 +279,9 @@ FHEM_reading2homekit_(mapping, orig)
           }
         }
 
+      if( mapped === '#' )
+        mapped = value;
+
       if( typeof mapping.value2homekit === 'object' )
         if( mapping.value2homekit[value] !== undefined )
           mapped = mapping.value2homekit[value];
@@ -1044,6 +1047,8 @@ FHEMAccessory(platform, s) {
     return;
   }
 
+  this.service_name = genericType;
+
   if( s.Internals.TYPE === 'structure' && genericType === undefined ) {
     this.log.info( 'ignoring ' + s.Internals.NAME + ' (' + s.Internals.TYPE + ') without genericDeviceType' );
     return;
@@ -1075,6 +1080,21 @@ FHEMAccessory(platform, s) {
 
       return 0;
     }.bind(null, this.mappings.Brightness);
+
+  } else if( match = s.PossibleSets.match(/(^| )bri[^\b\s]*(,(\d+)?)+\b/) ) {
+    // Hue
+    this.service_name = 'light';
+    var max = 100;
+    if( match[3] !== undefined )
+      max = match[3];
+    this.mappings.On = { reading: 'onoff', valueOff: '0', cmdOn: 'on', cmdOff: 'off' };
+    //FIXME: max & maxValue are not set. they would work in both directions. but we use pct for the set cmd. not bri!
+    this.mappings.Brightness = { reading: 'bri', cmd: 'pct', delay: true };
+
+    this.mappings.Brightness.reading2homekit = function(mapping, orig) {
+      return Math.ceil(orig  / 2.54);
+    }.bind(null, this.mappings.Brightness);
+
 
   } else if( match = s.PossibleSets.match(/(^| )pct\b/) ) {
     // HM dimmer
@@ -1433,8 +1453,6 @@ FHEMAccessory(platform, s) {
     this.mappings.FirmwareRevision = { reading: 'firmware', _isInformation: true };
   //FIXME: add swversion internal for HUEDevices
 
-  this.service_name = genericType;
-
   if( 0 ) {
   if( s.Readings.reachable )
     this.mappings.reachable = { reading: 'reachable' };
@@ -1477,7 +1495,7 @@ FHEMAccessory(platform, s) {
     } else {
       this.mappings.CurrentPosition = { reading: 'pct' };
       this.mappings.TargetPosition = { reading: 'pct', cmd: 'pct', delay: true };
-      if( s.Attributes.param && s.Attributes.param.match(/levelinverse/) ) {
+      if( s.Attributes.param && s.Attributes.param.match(/levelInverse/i) ) {
         this.mappings.CurrentPosition.invert = true;
         this.mappings.TargetPosition.invert = true;
     }
@@ -1679,6 +1697,7 @@ FHEMAccessory(platform, s) {
 
   }
 
+console.log( this.service_name );
   if( this.service_name === undefined ) {
     this.log.error( s.Internals.NAME + ': no service type detected' );
     return;
@@ -1841,7 +1860,7 @@ FHEMAccessory(platform, s) {
           }
 
           var from = match[1];
-          var to = match[3] === undefined ? i : match[3];
+          var to = match[3] === undefined ? entry : match[3];
 
           if( Characteristic[mapping.characteristic_type] && Characteristic[mapping.characteristic_type][to] !== undefined ) {
             mapping.homekit2name[Characteristic[mapping.characteristic_type][to]] = to;
@@ -1873,6 +1892,7 @@ FHEMAccessory(platform, s) {
 
       if( typeof mapping.cmds === 'object' ) {
         mapping.homekit2cmd = {};
+        mapping.homekit2cmd_re = [];
         for( var entry of mapping.cmds ) {
           var match = entry.match('^([^:]*)(:(.*))?$');
           if( !match ) {
@@ -1880,18 +1900,20 @@ FHEMAccessory(platform, s) {
             continue;
           }
 
-          var from = (match[1] === undefined || match[2] === undefined ) ? i : match[1];
+          var from = match[1];
           var to = match[2] !== undefined ? match[3] : match[1];
+
           if( match = from.match('^/(.*)/$') ) {
-            this.log.error( 'cmds: regex not allowed' + entry );
-            continue;
+            mapping.homekit2cmd_re.push( { re: match[1], to: to} );
+          } else {
+            if( Characteristic[mapping.characteristic_type] && Characteristic[mapping.characteristic_type][from] !== undefined )
+              from = Characteristic[mapping.characteristic_type][from];
+
+            mapping.homekit2cmd[from] = to;
           }
-
-          if( Characteristic[mapping.characteristic_type] && Characteristic[mapping.characteristic_type][from] !== undefined )
-            from = Characteristic[mapping.characteristic_type][from];
-
-          mapping.homekit2cmd[from] = to;
         }
+        if(mapping.homekit2cmd_re
+           && mapping.homekit2cmd_re.length) this.log.debug( 'homekit2cmd_re: ' + util.inspect(mapping.homekit2cmd_re) );
         if(mapping.homekit2cmd
            && Object.keys(mapping.homekit2cmd).length) this.log.debug( 'homekit2cmd: ' + util.inspect(mapping.homekit2cmd) );
       }
@@ -2189,6 +2211,15 @@ FHEMAccessory.prototype = {
 
       else if( typeof mapping.homekit2cmd === 'object' && mapping.homekit2cmd[value] !== undefined )
         cmd = mapping.homekit2cmd[value];
+
+      else if( typeof mapping.homekit2cmd_re === 'object' ) {
+        for( var entry of mapping.homekit2cmd_re ) {
+          if( value.toString().match( entry.re ) ) {
+            cmd = entry.to;
+            break;
+          }
+        }
+      }
 
       if( cmd === undefined ) {
         mapping.log.error(this.name + ' no cmd for ' + c + ', value ' + value);
