@@ -1577,6 +1577,16 @@ FHEMAccessory(platform, s) {
   } else if( s.Attributes.model == 'fs20di' )
     this.service_name = 'light';
 
+  if( s.Internals.TYPE == 'km200' ) {
+    // Buderus KM200
+    this.service_name = 'thermostat';
+
+    this.mappings.CurrentTemperature = { reading: '/heatingCircuits/hc1/roomtemperature' }
+    this.mappings.TargetTemperature = { reading: '/heatingCircuits/hc1/temporaryRoomSetpoint' , cmd: '/heatingCircuits/hc1/temporaryRoomSetpoint', maxValue: 30, delay: true  }
+    this.mappings.CurrentHeatingCoolingMode = { reading: '/heatSources/hs1/flameStatus' , values: ['/off/:OFF', '/on/:HEAT'], default: 'OFF' }
+    this.mappings.TargetHeatingCoolingMode = { reading: '/heatingCircuits/hc1/operationMode' , values: ['/auto/:AUTO'], default: 'AUTO' }
+  }
+
   if( match = s.PossibleSets.match(/(^| )desired-temp(:[^\d]*([^\$ ]*))?/) ) {
     //HM
     this.service_name = 'thermostat';
@@ -1629,7 +1639,6 @@ FHEMAccessory(platform, s) {
 
     if( s.Readings.measured )
       this.mappings.CurrentTemperature = { reading: 'measured' };
-
   }
 
   if( s.Internals.TYPE == 'SONOSPLAYER' ) { //FIXME: use sets [Pp]lay/[Pp]ause/[Ss]top
@@ -1712,8 +1721,6 @@ console.log( this.service_name );
                           + (this.mappings.TargetTemperature && this.mappings.TargetTemperature.cmd?this.mappings.TargetTemperature.cmd:'') );
     delete this.mappings.TargetTemperature;
   }
-
-
 
   this.log( s.Internals.NAME + ' has' );
   for( var characteristic_type in this.mappings ) {
