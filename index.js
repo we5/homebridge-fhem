@@ -1582,9 +1582,9 @@ FHEMAccessory(platform, s) {
     this.service_name = 'thermostat';
 
     this.mappings.CurrentTemperature = { reading: '/heatingCircuits/hc1/roomtemperature' }
-    this.mappings.TargetTemperature = { reading: '/heatingCircuits/hc1/temporaryRoomSetpoint' , cmd: '/heatingCircuits/hc1/temporaryRoomSetpoint', maxValue: 30, delay: true  }
-    this.mappings.CurrentHeatingCoolingMode = { reading: '/heatSources/hs1/flameStatus' , values: ['/off/:OFF', '/on/:HEAT'], default: 'OFF' }
-    this.mappings.TargetHeatingCoolingMode = { reading: '/heatingCircuits/hc1/operationMode' , values: ['/auto/:AUTO'], default: 'AUTO' }
+    this.mappings.TargetTemperature = { reading: '/heatingCircuits/hc1/currentRoomSetpoint' , cmd: '/heatingCircuits/hc1/temporaryRoomSetpoint', maxValue: 30, delay: true  }
+    this.mappings.CurrentHeatingCoolingState = { reading: '/heatSources/hs1/flameStatus' , values: ['/off/:OFF', '/on/:HEAT'], default: 'OFF' }
+    this.mappings.TargetHeatingCoolingState = { reading: '/heatingCircuits/hc1/operationMode' , values: ['/auto/:AUTO'], default: 'AUTO' }
   }
 
   if( match = s.PossibleSets.match(/(^| )desired-temp(:[^\d]*([^\$ ]*))?/) ) {
